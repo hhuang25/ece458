@@ -1,0 +1,16 @@
+cc = g++
+flags= -lssl -lcrypto -L/usr/lib -Wall
+all: server client
+
+server: server.c++ encodings.o crypto.o
+	${cc} ${flags} -o server.o server.c++ encodings.o crypto.o
+client: client.c++ encodings.o crypto.o
+	${cc} ${flags} -o client.o client.c++ encodings.o crypto.o
+encodings.o: encodings.c++ encodings.h
+	${cc} -c encodings.c++ -o encodings.o
+crypto.o: crypto.c++ crypto.h
+	${cc} -c crypto.c++ -o crypto.o
+
+clean:
+	rm server.o client.o encodings.o crypto.o
+
