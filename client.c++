@@ -105,10 +105,10 @@ string read_packet (int client_socket)
 
                 if (msg.length() > 1 && msg[msg.length() - 1] == '\n')
                 {
-                    istringstream buf(msg);
-                    string msg_token;
-                    buf >> msg_token;
-                    return msg_token;
+                    //istringstream buf(msg);
+                    //string msg_token;
+                    //buf >> msg_token;
+                    return msg;
                 }
             }
         }

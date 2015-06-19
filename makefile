@@ -1,5 +1,5 @@
 cc = g++
-flags= -lssl -lcrypto -L/usr/lib
+flags= -lssl -lcrypto #-L/usr/lib
 flagsWin= -lssl -lcrypto
 all: server client
 
@@ -16,7 +16,7 @@ crypto.o: crypto.c++ crypto.h
 	${cc} -c crypto.c++ -o crypto.o
 
 clean:
-	rm server.o client.o encodings.o crypto.o
+	rm server.out client.out encodings.o crypto.o
 clean-windows:
 	rm server.exe client.exe encodings.o crypto.o
 

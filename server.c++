@@ -25,6 +25,7 @@
 #include <ctime>
 #include <cstring>
 #include <cerrno>
+#include<cstdlib>
 using namespace std;
 
 #include <sys/types.h>
@@ -118,7 +119,15 @@ void process_connection (int client_socket)
         const string & db_password = passwords[username];
 		cout<<"hi there" <<endl;
 		const string & R = cgipp::sha256("start");
-		cout<< R<<endl;
+        char str[17];
+        static const char alphanum[] = "0123456789abcdefghi"
+            "pqrstuvwxyz";
+        for(int i = 0; i < 17; ++i){
+            str[i] = alphanum[rand()%(sizeof(alphanum)-1)];
+        }
+        str[17] = 0;
+
+		cout<< str<<endl;
 		
 		send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
 		
