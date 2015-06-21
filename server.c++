@@ -26,12 +26,13 @@
 #include <cstring>
 #include <cerrno>
 
-#include<cstdlib>
+#include <cstdlib>
 #include <fstream>  
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 using namespace std;
 
 #include <sys/types.h>
@@ -50,8 +51,16 @@ void listen_connections (int port);
 void process_connection (int client_socket);
 string read_packet (int client_socket);
 
+int pLength;
+
 int main (int na, char * arg[])
 {
+	if(na == 2){
+		pLength = atoi(arg[1]);
+	}else{
+		pLength = 2;
+	}
+	cout<<"begin server"<<endl;
     listen_connections (10458);
 
     return 0;
@@ -123,12 +132,9 @@ void process_connection (int client_socket)
 
         const string & username = read_packet (client_socket);
         const string & db_password = passwords[username];
-		
-		const string & R = cgipp::sha256("start");
-		cout<<R <<endl;
+		/*
         char str[17];
         static const char alphanum[] = "0123456789abcdef";
-        /*
         for(int i = 0; i < 17; ++i){
             str[i] = alphanum[rand()%(sizeof(alphanum)-1)];
         }
@@ -138,7 +144,7 @@ void process_connection (int client_socket)
                 fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
                 return;
         }
-        int len = 16;
+        int len = 16; // this is half the value, actual hex will be double
         unsigned char buffer[len];
         char hexbuf[len*2+1];
         if(fread(buffer, 1, sizeof(buffer), fin) == sizeof(buffer)){
@@ -150,10 +156,60 @@ void process_connection (int client_socket)
 			}
         }
         fclose(fin);
-        cout<<"hex: " <<hexbuf<<endl;
+        const string & R = cgipp::sha256(hexbuf);
+        cout<<"hex R: " <<hexbuf<<endl;
+        //cout<<"SHA256 R: " <<R <<endl;
+        
+        if ((fin = fopen("/dev/urandom", "r")) == NULL) {
+                fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
+                return;
+        }
+        unsigned char bufferP[pLength];
+        char hexbufP[pLength*2+1];
+        if(fread(bufferP, 1, sizeof(bufferP), fin) == sizeof(bufferP)){
+        	
+        	hexbufP[pLength*2+1] = 0;
+        	for (int i = 0; i < sizeof(bufferP); i++)
+			{
+				sprintf(&hexbufP[2 * i], "%02x", bufferP[i]);
+			}
+        }
+        fclose(fin);
+        const string & P(hexbufP);
+        cout<<"hex P: " <<hexbufP <<endl;
 		
-		send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
-		
+		const string &sendvalue = R + " " + P + "\n";
+		cout <<"send " <<sendvalue <<endl;
+		send (client_socket, sendvalue.c_str(), sendvalue.length(), MSG_NOSIGNAL);
+		time_t t;
+		while(true){
+			t = time(NULL);
+			cout <<"waiting" <<endl;
+			const string response = read_packet (client_socket);
+			double difference = difftime(time(NULL), t);
+			cout<<"received "<<response <<"time: " << difference<<endl;
+			if(difference < pLength){
+				cout<<"time too short"<<endl;
+				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
+				break;
+			}else if(difference > (pLength*3)*(pLength*3)){
+				cout<<"took too long"<<endl;
+				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
+				exit(EXIT_FAILURE);
+			}
+			const string hash = cgipp::sha256(response);
+			//each SHA256 is 64, 3*64 = 192 plus newline is 193
+			if(response.length() == 193 && hash.substr(0,pLength*2)==P){
+				cout<<"challenge accepted"<<endl;
+				send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
+			}else
+            {
+            	cout<<"response denied, closing connection"<<endl;
+                send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
+                break;
+            }
+		}
+		/*
         while (true)
         {
             const string & password = read_packet (client_socket);
@@ -166,6 +222,7 @@ void process_connection (int client_socket)
                 send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
             }
         }
+        */
 
         close (client_socket);
     }
@@ -207,10 +264,10 @@ string read_packet (int client_socket)
 
                 if (msg.length() > 1 && msg[msg.length() - 1] == '\n')
                 {
-                    istringstream buf(msg);
-                    string msg_token;
-                    buf >> msg_token;
-                    return msg_token;
+                    //istringstream buf(msg);
+                    //string msg_token;
+                    //buf >> msg_token;
+                    return msg;
                 }
             }
         }
