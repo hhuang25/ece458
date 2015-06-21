@@ -25,7 +25,13 @@
 #include <ctime>
 #include <cstring>
 #include <cerrno>
+
 #include<cstdlib>
+#include <fstream>  
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
 using namespace std;
 
 #include <sys/types.h>
@@ -117,17 +123,34 @@ void process_connection (int client_socket)
 
         const string & username = read_packet (client_socket);
         const string & db_password = passwords[username];
-		cout<<"hi there" <<endl;
+		
 		const string & R = cgipp::sha256("start");
+		cout<<R <<endl;
         char str[17];
-        static const char alphanum[] = "0123456789abcdefghi"
-            "pqrstuvwxyz";
+        static const char alphanum[] = "0123456789abcdef";
+        /*
         for(int i = 0; i < 17; ++i){
             str[i] = alphanum[rand()%(sizeof(alphanum)-1)];
         }
-        str[17] = 0;
-
-		cout<< str<<endl;
+		*/
+		FILE *fin;
+		if ((fin = fopen("/dev/urandom", "r")) == NULL) {
+                fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
+                return;
+        }
+        int len = 16;
+        unsigned char buffer[len];
+        char hexbuf[len*2+1];
+        if(fread(buffer, 1, sizeof(buffer), fin) == sizeof(buffer)){
+        	
+        	hexbuf[len*2+1] = 0;
+        	for (int i = 0; i < sizeof(buffer); i++)
+			{
+				sprintf(&hexbuf[2 * i], "%02x", buffer[i]);
+			}
+        }
+        fclose(fin);
+        cout<<"hex: " <<hexbuf<<endl;
 		
 		send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
 		
