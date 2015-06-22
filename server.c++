@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 using namespace std;
 
 #include <sys/types.h>
@@ -60,7 +61,7 @@ int main (int na, char * arg[])
 	}else{
 		pLength = 2;
 	}
-	cout<<"begin server"<<endl;
+	cout<<"begin server, non-hex length is " << pLength <<endl;
     listen_connections (10458);
 
     return 0;
@@ -181,30 +182,35 @@ void process_connection (int client_socket)
 		const string &sendvalue = R + " " + P + "\n";
 		cout <<"send " <<sendvalue <<endl;
 		send (client_socket, sendvalue.c_str(), sendvalue.length(), MSG_NOSIGNAL);
-		time_t t;
+		struct timeval t;
+		gettimeofday(&t, NULL);
+		struct timeval t_new;
+		struct timeval tv;
+		tv.tv_sec = (int)(pow(16,pLength)/6); // six is kind of arbitrary here.
+		tv.tv_usec = 0;
+		setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 		while(true){
-			t = time(NULL);
 			cout <<"waiting" <<endl;
 			const string response = read_packet (client_socket);
-			double difference = difftime(time(NULL), t);
+			gettimeofday(&t_new, NULL);
+			double difference = (t_new.tv_sec*1000+(double)(t_new.tv_usec/1000))
+				- (t.tv_sec*1000+(double)(t.tv_usec/1000));
 			cout<<"received "<<response <<"time: " << difference<<endl;
-			if(difference < pLength){
+			// for hex length 2, we want to allow less than one second
+			if(difference < pLength*1000 - 950){
 				cout<<"time too short"<<endl;
 				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
 				break;
-			}else if(difference > (pLength*3)*(pLength*3)){
-				cout<<"took too long"<<endl;
-				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
-				exit(EXIT_FAILURE);
 			}
 			const string hash = cgipp::sha256(response);
 			//each SHA256 is 64, 3*64 = 192 plus newline is 193
-			if(response.length() == 193 && hash.substr(0,pLength*2)==P){
+			if(response.length() == 193 && hash.substr(0,pLength*2)==P
+			&& response.substr(0,64) == R && response.substr(128,64) == R){
 				cout<<"challenge accepted"<<endl;
 				send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
 			}else
             {
-            	cout<<"response denied, closing connection"<<endl;
+            	cout<<"response denied"<<endl;
                 send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
                 break;
             }

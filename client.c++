@@ -47,23 +47,20 @@ class socket_error {};
 
 int main(int argc, char *argv[])
 {
-	int pLength = 2 *2;
-	if(argc == 2){
-		pLength = atoi(argv[1])*2;
-	}
-	cout<<"begin client"<<endl;
+	//cout<<"begin client"<<endl;
     int socket = socket_to_server ("127.0.0.1", 10458);
         // The function expects an IP address, and not a 
         // hostname such as "localhost" or ecelinux1, etc.
-
-	int len = 32; // this is the actual hex value, twice that of original
+	cout<<"begin client, socket "<< socket<<endl;
+	int len = 32; // this is string length before hex conversion
     if (socket != -1)
     {
         send (socket, "user1\n", 7, MSG_NOSIGNAL);
-        usleep (100000);
+        usleep (10000);
         //send (socket, "password1\n", 11, MSG_NOSIGNAL);
 		
 		string RP = read_packet(socket);
+		int pLength = RP.length() - len*2 - 2;
 		string R = RP.substr(0,len*2);
 		string P = RP.substr(len*2+1, pLength);
         cout <<"received " +  RP << endl;
@@ -71,6 +68,7 @@ int main(int argc, char *argv[])
         cout <<"P is " +  P << endl;
         
         FILE *fin;
+        int iterations = 0;
         unsigned char buffer[len];
         char hexbuf[len*2+1];
         while(true){
@@ -93,9 +91,10 @@ int main(int argc, char *argv[])
 		    total.append(R);
 		    total.append("\n");
 		    const string hash = cgipp::sha256(total);
+		    ++iterations;
 		    //cout<<hash.substr(0,pLength)<<" vs " <<P<<endl;
 		    if(hash.substr(0,pLength) == P){
-		    	cout<<hash<<endl;
+		    	cout<<iterations <<" iterations: " <<hash<<endl;
 		    	send (socket, total.c_str(), total.length(), MSG_NOSIGNAL);
 		    	break;
 		    }
