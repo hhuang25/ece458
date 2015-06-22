@@ -70,33 +70,43 @@ int main(int argc, char *argv[])
 	bool finished = false;
 	int letters = 0;
 	
-	static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
+	static const char alphabet[] = "ghijnoptuvwabcxyzdefqrsklm";
 	
 	while(!finished){
 		uint64_t timevalues [26] = {};
 		uint64_t squarevalues [26] = {};
 		int times_picked [26] = {};
 		//destroy possible caching
-		for(int i = 0; i < 10000; i++){
+		for(int i = 0; i < 10000000; i++){
 			int chosen_char = rand()%(sizeof(alphabet)-1);
 			const char &current = alphabet[chosen_char];
 			string pwd_attempt = possiblePwd + current;
-			password_ok (pwd_attempt);
+			const uint64_t start = rdtsc();
+            password_ok (pwd_attempt);
+            const uint64_t end = rdtsc();
+            
 		}
-		for(int i = 0; i < 1000000; i++){
+		for(int i = 0; i < 10000000; i++){
+            /*for(int j = 0; j < 10; j++){
+			    int chosen_char = rand()%(sizeof(alphabet)-1);
+			    const char &current = alphabet[chosen_char];
+			    string pwd_attempt = possiblePwd + current;
+			    //password_ok (pwd_attempt);
+		    }*/
+
 			int chosen_char = rand()%(sizeof(alphabet)-1);
 			char current = alphabet[chosen_char];
 			
 			string pwd_attempt = possiblePwd + current;
-			const uint64_t start = rdtsc();
+			uint64_t start = rdtsc();
 			finished = password_ok (pwd_attempt);
-			const uint64_t end = rdtsc();
+			uint64_t end = rdtsc();
 			if(finished){
 				cout<<"password guessed correct: " <<pwd_attempt <<endl;
 				break;
 			}
 			// ... execution time is end – start
-			const uint64_t difference = end - start;
+			uint64_t difference = end - start;
 			//cout<< alphabet[chosen_char]<< ": time of " <<difference <<endl; 
 			timevalues[chosen_char] += difference;
 			squarevalues[chosen_char] += (difference*difference);
@@ -131,7 +141,7 @@ int main(int argc, char *argv[])
 		cout<<"\n95\% confidence interval: " <<highest_mean << " +- " <<confidence95 <<"\n99\% confidence interval: " <<highest_mean << " +- " <<confidence99<< endl; 
 		cout<<"next best time: " << nexthighest_mean <<endl;
 		
-		if(highest_mean/nexthighest_mean < 1.1 || highest_mean / confidence99 < 10){
+		if(highest_mean/nexthighest_mean < 1.01 ||confidence99/highest_mean > 0.02 || (highest_mean - confidence99) < nexthighest_mean){
 			cout<< "You are on the wrong track, try a shorter guess" <<endl;
 		}
 		return 0;
@@ -150,7 +160,7 @@ static __inline__ uint64_t rdtsc()
 
 bool password_ok (const string &pwd)
 {
-	return pwd == "weakpassword";
+	return strcmp(pwd.c_str(), "mypassword") == 0;
 }
 
 int socket_to_server (const char * IP, int port)
