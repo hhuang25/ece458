@@ -62,7 +62,7 @@ int main (int na, char * arg[])
 		pLength = 2;
 	}
 	cout<<"begin server, non-hex length is " << pLength <<endl;
-    listen_connections (10458);
+    listen_connections (12592);
 
     return 0;
 }
@@ -186,7 +186,7 @@ void process_connection (int client_socket)
 		gettimeofday(&t, NULL);
 		struct timeval t_new;
 		struct timeval tv;
-		tv.tv_sec = (int)(pow(16,pLength)/6); // six is kind of arbitrary here.
+		tv.tv_sec = (int)(pow(16,pLength*2-2)/4)+1; // six is kind of arbitrary here.
 		tv.tv_usec = 0;
 		setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 		while(true){

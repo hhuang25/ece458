@@ -160,7 +160,8 @@ static __inline__ uint64_t rdtsc()
 
 bool password_ok (const string &pwd)
 {
-	return strcmp(pwd.c_str(), "mypassword") == 0;
+	return pwd == "mypassword";
+    //return strcmp(pwd.c_str(), "mypassword") == 0;
 }
 
 int socket_to_server (const char * IP, int port)

@@ -48,7 +48,7 @@ class socket_error {};
 int main(int argc, char *argv[])
 {
 	//cout<<"begin client"<<endl;
-    int socket = socket_to_server ("127.0.0.1", 10458);
+    int socket = socket_to_server ("127.0.0.1", 12592);
         // The function expects an IP address, and not a 
         // hostname such as "localhost" or ecelinux1, etc.
 	cout<<"begin client, socket "<< socket<<endl;
