@@ -15,8 +15,10 @@ encodings.o: encodings.c++ encodings.h
 crypto.o: crypto.c++ crypto.h
 	${cc} -c crypto.c++ -o crypto.o
 
+pwd: pwd_client.c++
+	${cc} -o pwd_client.out pwd_client.c++
 clean:
-	rm server.out client.out encodings.o crypto.o
+	rm server.out client.out encodings.o crypto.o pwd_client.out 
 clean-windows:
 	rm server.exe client.exe encodings.o crypto.o
 

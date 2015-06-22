@@ -24,6 +24,9 @@
 #include <ctime>
 #include <cstring>
 #include <cerrno>
+
+#include <inttypes.h>
+#include <math.h>
 using namespace std;
 
 #include <sys/types.h>
@@ -34,6 +37,8 @@ using namespace std;
 #include <wait.h>
 #include <unistd.h>
 
+static __inline__ uint64_t rdtsc();
+bool password_ok (const string &pwd);
 int socket_to_server (const char * IP, int port);
 string read_packet (int socket);
 
@@ -41,8 +46,9 @@ class connection_closed {};
 class socket_error {};
 
 
-int main()
+int main(int argc, char *argv[])
 {
+	/*
     int socket = socket_to_server ("127.0.0.1", 10458);
         // The function expects an IP address, and not a 
         // hostname such as "localhost" or ecelinux1, etc.
@@ -55,8 +61,96 @@ int main()
 
         cout << read_packet (socket) << endl;
     }
-
+	*/
+	string possiblePwd = "";
+	if(argc == 2){
+		possiblePwd = argv[1];
+	}
+	srand(time(NULL));
+	bool finished = false;
+	int letters = 0;
+	
+	static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
+	
+	while(!finished){
+		uint64_t timevalues [26] = {};
+		uint64_t squarevalues [26] = {};
+		int times_picked [26] = {};
+		//destroy possible caching
+		for(int i = 0; i < 10000; i++){
+			int chosen_char = rand()%(sizeof(alphabet)-1);
+			const char &current = alphabet[chosen_char];
+			string pwd_attempt = possiblePwd + current;
+			password_ok (pwd_attempt);
+		}
+		for(int i = 0; i < 1000000; i++){
+			int chosen_char = rand()%(sizeof(alphabet)-1);
+			char current = alphabet[chosen_char];
+			
+			string pwd_attempt = possiblePwd + current;
+			const uint64_t start = rdtsc();
+			finished = password_ok (pwd_attempt);
+			const uint64_t end = rdtsc();
+			if(finished){
+				cout<<"password guessed correct: " <<pwd_attempt <<endl;
+				break;
+			}
+			// ... execution time is end – start
+			const uint64_t difference = end - start;
+			//cout<< alphabet[chosen_char]<< ": time of " <<difference <<endl; 
+			timevalues[chosen_char] += difference;
+			squarevalues[chosen_char] += (difference*difference);
+			times_picked[chosen_char] = times_picked[chosen_char] + 1;
+			
+		}
+		if(finished) break;
+		//initialize to "a"
+		double highest_mean = 0.0;
+		double highest_var = 0.0;
+		char highest_char = 'a';
+		double nexthighest_mean = 0.0;
+		int highest_picktime = 0;
+		for(int i = 0; i < 26; i++){
+			double current_mean = (double)timevalues[i] / times_picked[i];
+			double current_var = ((double)1/ (double)(times_picked[i] - 1)) * (double)(squarevalues[i] - times_picked[i] * (current_mean * current_mean));
+			if(current_mean > nexthighest_mean && current_mean < highest_mean){
+				nexthighest_mean = current_mean;
+			}
+			if(current_mean > highest_mean){
+				nexthighest_mean = highest_mean;
+				highest_mean = current_mean;
+				highest_var = current_var;
+				highest_picktime = times_picked[i];
+				highest_char = alphabet[i];
+			}
+			cout<< alphabet[i] <<" mean: " <<current_mean << " ms, \tvariance: " <<current_var << " \tpicked " << times_picked[i] <<" times" <<endl;
+		}
+		double confidence95 = 1.96*sqrt(highest_var) / sqrt(highest_picktime);
+		double confidence99 = 2.58*sqrt(highest_var) / sqrt(highest_picktime);
+		cout<< "\nBEST GUESS: " << possiblePwd+highest_char << ", with time: " << highest_mean << " variance: " << highest_var <<endl;
+		cout<<"\n95\% confidence interval: " <<highest_mean << " +- " <<confidence95 <<"\n99\% confidence interval: " <<highest_mean << " +- " <<confidence99<< endl; 
+		cout<<"next best time: " << nexthighest_mean <<endl;
+		
+		if(highest_mean/nexthighest_mean < 1.1 || highest_mean / confidence99 < 10){
+			cout<< "You are on the wrong track, try a shorter guess" <<endl;
+		}
+		return 0;
+		
+	}
+	
     return 0;
+}
+
+static __inline__ uint64_t rdtsc()
+{
+	uint32_t hi, lo;
+	__asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+	return ((uint64_t)lo) | (((uint64_t)hi) << 32);
+}
+
+bool password_ok (const string &pwd)
+{
+	return pwd == "weakpassword";
 }
 
 int socket_to_server (const char * IP, int port)
