@@ -190,12 +190,12 @@ void process_connection (int client_socket)
 		tv.tv_usec = 0;
 		setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 		while(true){
-			cout <<"waiting" <<endl;
+			cout <<"waiting up to "<< tv.tv_sec <<" seconds." <<endl;
 			const string response = read_packet (client_socket);
 			gettimeofday(&t_new, NULL);
 			double difference = (t_new.tv_sec*1000+(double)(t_new.tv_usec/1000))
 				- (t.tv_sec*1000+(double)(t.tv_usec/1000));
-			cout<<"received "<<response <<"time: " << difference<<endl;
+			cout<<"received "<<response <<"time: " << difference/1000 << " seconds"<<endl;
 			// for hex length 2, we want to allow less than one second
 			if(difference < pLength*1000 - 950){
 				cout<<"time too short"<<endl;
