@@ -60,13 +60,14 @@ int main(int argc, char *argv[])
 		//destroy possible caching
 		for(int i = 0; i < 100000; i++){
 			int chosen_char = rand()%26;
+			random_shuffle(alphabet.begin(),alphabet.end());
 			const char &current = alphabet.at(chosen_char);
 			const string &pwd_attempt = possiblePwd + current;
             password_ok (pwd_attempt);
             
 		}
 		srand(time(NULL));
-		for(int i = 0; i < 1000000; i++){
+		for(int i = 0; i < 2600000; i++){
             int chosen_char = rand()%26;
             random_shuffle(alphabet.begin(),alphabet.end());
 			char current = alphabet.at(chosen_char);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 		cout<<"\n95\% confidence interval: " <<highest_mean << " +- " <<confidence95 <<"\n99\% confidence interval: " <<highest_mean << " +- " <<confidence99<< endl; 
 		cout<<"next longest time: " << nexthighest_mean <<endl;
 		
-		if(highest_mean/nexthighest_mean < 1.01 ||confidence99/highest_mean > 0.02 || (highest_mean - confidence99) < nexthighest_mean){
+		if(highest_mean/nexthighest_mean < 1.01 ||confidence99/highest_mean > 0.03 || (highest_mean - confidence99) < nexthighest_mean){
 			cout<< "Not confident about attempted password, try a shorter guess?" <<endl;
 		}
 		return 0;
