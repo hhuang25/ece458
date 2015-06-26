@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include "crypto.h"
+#include "encodings.h"
 using namespace std;
 
 #include <sys/types.h>
@@ -43,7 +45,6 @@ using namespace std;
 #include <sys/time.h>
 #include <wait.h>
 #include <unistd.h>
-#include "crypto.h"
 
 class connection_closed {};
 class socket_error {};
@@ -131,8 +132,8 @@ void process_connection (int client_socket)
             // For the real server, this will be populated with the 
             // usernames and passwords from a text file.
 
-        const string & username = read_packet (client_socket);
-        const string & db_password = passwords[username];
+        //const string & username = read_packet (client_socket);
+        //const string & db_password = passwords[username];
 		/*
         char str[17];
         static const char alphanum[] = "0123456789abcdef";
@@ -146,48 +147,75 @@ void process_connection (int client_socket)
                 return;
         }
         int len = 16; // this is half the value, actual hex will be double
-        unsigned char buffer[len];
-        char hexbuf[len*2+1];
+        char buffer[len];
+        //char hexbuf[len*2+1];
+        /*
+        std::ifstream rfin("/dev/urandom");
+        rfin.read(buffer, len);
+		rfin.close(); 
+        cout<<"buffer: " <<buffer<<endl;
+
+        string R (buffer);
+        cout<<"hex straight up: " << cgipp::hex_encoded(buffer) <<endl;
+        cout<<"hex encoded: " << cgipp::hex_encoded(R) <<endl;
+        cout<<"hex decoded: " << cgipp::hex_decoded(cgipp::hex_encoded(R)) <<endl;
+        */
+        
+		string R;
         if(fread(buffer, 1, sizeof(buffer), fin) == sizeof(buffer)){
-        	
+        	//cout<< "R: " <<buffer << endl;
+        	R = string(buffer,len);
+        	//cout<< "short R: " <<R << endl;
+        	/*
         	hexbuf[len*2+1] = 0;
         	for (int i = 0; i < sizeof(buffer); i++)
 			{
 				sprintf(&hexbuf[2 * i], "%02x", buffer[i]);
 			}
+			*/
+			
         }
         fclose(fin);
-        const string & R = cgipp::sha256(hexbuf);
-        cout<<"hex R: " <<hexbuf<<endl;
+        string hexR = cgipp::hex_encoded(R);
+    	//cout<< "hex R: " <<hexR << endl;
+        
+        //R = cgipp::sha256(hexbuf);
+        //cout<<"hex R: " <<hexbuf<<endl;
         //cout<<"SHA256 R: " <<R <<endl;
+        
         
         if ((fin = fopen("/dev/urandom", "r")) == NULL) {
                 fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
                 return;
         }
-        unsigned char bufferP[pLength];
-        char hexbufP[pLength*2+1];
+        char bufferP[pLength];
+        //char hexbufP[pLength*2+1];
+        string P;
         if(fread(bufferP, 1, sizeof(bufferP), fin) == sizeof(bufferP)){
-        	
+        	P = string(bufferP,pLength);
+        	/*
         	hexbufP[pLength*2+1] = 0;
         	for (int i = 0; i < sizeof(bufferP); i++)
 			{
 				sprintf(&hexbufP[2 * i], "%02x", bufferP[i]);
 			}
+			*/
         }
         fclose(fin);
-        const string & P(hexbufP);
-        cout<<"hex P: " <<hexbufP <<endl;
+        string hexP = cgipp::hex_encoded(P);
+        //cout<<"P: " <<P <<endl;
+        //cout<<"hex P: " <<hexP <<endl;
 		
-		const string &sendvalue = R + " " + P + "\n";
+		const string &sendvalue = hexR + " " + hexP + "\n";
 		cout <<"send " <<sendvalue <<endl;
-		send (client_socket, sendvalue.c_str(), sendvalue.length(), MSG_NOSIGNAL);
+
 		struct timeval t;
-		gettimeofday(&t, NULL);
 		struct timeval t_new;
 		struct timeval tv;
-		tv.tv_sec = (int)(pow(16,pLength*2-2)/4)+1; // six is kind of arbitrary here.
+		tv.tv_sec = (int)(pow(16,pLength-1))+1; 
 		tv.tv_usec = 0;
+		gettimeofday(&t, NULL);
+		send (client_socket, sendvalue.c_str(), sendvalue.length(), MSG_NOSIGNAL);
 		setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 		while(true){
 			cout <<"waiting up to "<< tv.tv_sec <<" seconds." <<endl;
@@ -196,16 +224,15 @@ void process_connection (int client_socket)
 			double difference = (t_new.tv_sec*1000+(double)(t_new.tv_usec/1000))
 				- (t.tv_sec*1000+(double)(t.tv_usec/1000));
 			cout<<"received "<<response <<"time: " << difference/1000 << " seconds"<<endl;
-			// for hex length 2, we want to allow less than one second
-			if(difference < pLength*1000 - 950){
+			if(difference < tv.tv_sec*3){
 				cout<<"time too short"<<endl;
 				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
 				break;
 			}
-			const string hash = cgipp::sha256(response);
-			//each SHA256 is 64, 3*64 = 192 plus newline is 193
-			if(response.length() == 193 && hash.substr(0,pLength*2)==P
-			&& response.substr(0,64) == R && response.substr(128,64) == R){
+			const string hash = cgipp::sha256(cgipp::hex_decoded(response.substr(0,response.length()-1)));
+			cout<<"hash is: "<<hash<<endl;
+			if(response.length() == 97 && hash.substr(0,pLength*2)==hexP
+			&& response.substr(0,32) == hexR && response.substr(64,32) == hexR){
 				cout<<"challenge accepted"<<endl;
 				send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
 			}else
@@ -215,6 +242,8 @@ void process_connection (int client_socket)
                 break;
             }
 		}
+		
+		
 		/*
         while (true)
         {

@@ -1,5 +1,4 @@
 #include "encodings.h"
-
 #include "cgipp_exception.h"
 
 namespace 

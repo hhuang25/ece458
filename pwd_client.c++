@@ -70,8 +70,8 @@ int main(int argc, char *argv[])
 	bool finished = false;
 	int letters = 0;
 	
-	static const char alphabet[] = "ghijnoptuvwabcxyzdefqrsklm";
-	
+	//static const char alphabet[] = "ghijnoptuvwabcxyzdefqrsklm";
+	static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 	while(!finished){
 		uint64_t timevalues [26] = {};
 		uint64_t squarevalues [26] = {};
