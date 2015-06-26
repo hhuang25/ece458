@@ -57,16 +57,16 @@ int main(int argc, char *argv[])
 		uint64_t squarevalues [26] = {};
 		int times_picked [26] = {};
 		//destroy possible caching
-		for(int i = 0; i < 1000000; i++){
+		for(int i = 0; i < 100000; i++){
 			int chosen_char = rand()%(sizeof(alphabet)-1);
 			const char &current = alphabet[chosen_char];
 			const string &pwd_attempt = possiblePwd + current;
             password_ok (pwd_attempt);
             
 		}
+		srand(time(NULL));
 		for(int i = 0; i < 10000000; i++){
             int chosen_char = rand()%(sizeof(alphabet)-1);
-            if(i%10 == 0 || i%10 == 9) continue;
 			char current = alphabet[chosen_char];
 			
 			const string &pwd_attempt = possiblePwd + current;
