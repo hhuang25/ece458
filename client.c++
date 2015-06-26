@@ -64,23 +64,23 @@ int main(int argc, char *argv[])
         //usleep (10000);
         //send (socket, "password1\n", 11, MSG_NOSIGNAL);
 		
-		string hexRP = read_packet(socket);
+		const string &hexRP = read_packet(socket);
 		//cout <<"received " +  hexRP << endl;
 		
 		int spaceLocation = hexRP.find(' ', 0);
 		//cout<<hexRP.length() << " " << spaceLocation<<endl;
-		string R = cgipp::hex_decoded(hexRP.substr(0,spaceLocation));
+		const string &R = cgipp::hex_decoded(hexRP.substr(0,spaceLocation));
 		//cout <<"R is " +  R << endl;
-		string P = cgipp::hex_decoded(hexRP.substr(spaceLocation+1, hexRP.length() - spaceLocation-2));
+		const string &P = cgipp::hex_decoded(hexRP.substr(spaceLocation+1, hexRP.length() - spaceLocation-2));
         
         //cout <<"P is " +  P << endl;
         //int pLength = hexRP.length() - len - 1;
         
-        FILE *fin;
+        //FILE *fin;
         int iterations = 0;
-        char buffer[len];
+        //char buffer[len];
         //char hexbuf[len*2+1];
-        string X;
+        //string X;
         uint64_t rannum = rand();
         while(true){
         	/*
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 		    sprintf(rawX,"%016lx",rannum);
 		    //cout<<"rawX: " <<rawX<<endl;
 		    rannum++;
-		    X = string(rawX);
+		    const string &X(rawX);
 		    string total = R;
 		    total.append(X);
 		    total.append(R);
