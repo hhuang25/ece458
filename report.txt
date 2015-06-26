@@ -26,7 +26,8 @@ For this portion, a password is cracked using the amount of time it takes for th
 The longer it takes to reject a password, the more likely it is to be correct.
 One character is added at a time to an existing guess until the entire password is obtained.
 A warm up period of 100,000 tries without timing the results was chosen to prevent caching. The characters a-z were chosen randomly for similar reasons.
-A total of 10,000,000 attempts in total for all of a-z is used to get a small confidence interval.
+A total of 2,600,000 attempts in total for all of a-z is used to get a small confidence interval.
+For best results, use eceubuntu.
 
 Instructions on how to compile and use the programs can be found in the README file.
 
