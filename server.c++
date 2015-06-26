@@ -152,7 +152,7 @@ void process_connection (int client_socket)
         fclose(fin);
         string hexP = cgipp::hex_encoded(P);
 		const string &sendvalue = hexR + " " + hexP + "\n";
-		cout <<"send " <<sendvalue <<endl;
+		cout <<"\nsend " <<sendvalue <<endl;
 
 		struct timeval t;
 		struct timeval t_new;

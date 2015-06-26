@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
 		}
 		for(int i = 0; i < 10000000; i++){
             int chosen_char = rand()%(sizeof(alphabet)-1);
+            if(i%10 == 0 || i%10 == 9) continue;
 			char current = alphabet[chosen_char];
 			
 			const string &pwd_attempt = possiblePwd + current;
