@@ -1,7 +1,7 @@
 cc = g++
 flags= -lssl -lcrypto #-L/usr/lib
 flagsWin= -lssl -lcrypto
-all: server client
+all: server client pwd
 
 windows: server.c++ client.c++ encodings.o crypto.o
 	${cc} -o server.exe server.c++ encodings.o crypto.o ${flagsWin} 

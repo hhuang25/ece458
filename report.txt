@@ -1,0 +1,32 @@
+Assignment 2 Report
+
+Name: Haodong Huang
+Waterloo student ID: 20442592
+
+Part 1: Proof of Work
+
+For this portion, R was created by reading 16 characters from /dev/urandom. 
+P was created by reading a configurable number of characters (usually 2) from /dev/urandom.
+The hex encoded version of R and P are sent from the server to client.
+
+The client uses a 64-bit counter to solve the challenge such that SHA256(R|x|R) begins with P.
+A counter was chosen because it was faster than reading from /dev/urandom during testing. 
+On average, it takes about 0.25 seconds to solve 2 characters (4 hex encoded characters).
+This is about 65000 computations for SHA256(R|x|R), which is approximate 16^4.
+0.25 seconds seems like a reasonable amount of time because it is not noticeable to the user.
+An upper limit of five seconds was chosen before the server times out. 
+This value was chosen to account for very bad connections and weak hardware on the client.
+For a P of 2 characters (4 hex encoded), replies of less than 50 ms are not accepted to prevent denial of service attacks.
+The server can be configured for a challenge of any length. 
+Timeout values are proportional to 16^(length of P) to account for the difficulty of solving larger challenges.
+
+Part 2: Timing Attack
+
+For this portion, a password is cracked using the amount of time it takes for the program to reject the password.
+The longer it takes to reject a password, the more likely it is to be correct.
+One character is added at a time to an existing guess until the entire password is obtained.
+A warm up period of 100,000 tries without timing the results was chosen to prevent caching. The characters a-z were chosen randomly for similar reasons.
+A total of 10,000,000 attempts in total for all of a-z is used to get a small confidence interval.
+
+Instructions on how to compile and use the programs can be found in the README file.
+

@@ -126,21 +126,6 @@ void process_connection (int client_socket)
 {
     try
     {
-        map<string,string> passwords;
-        passwords["user1"] = "password1";
-        passwords["user2"] = "password2";
-            // For the real server, this will be populated with the 
-            // usernames and passwords from a text file.
-
-        //const string & username = read_packet (client_socket);
-        //const string & db_password = passwords[username];
-		/*
-        char str[17];
-        static const char alphanum[] = "0123456789abcdef";
-        for(int i = 0; i < 17; ++i){
-            str[i] = alphanum[rand()%(sizeof(alphanum)-1)];
-        }
-		*/
 		FILE *fin;
 		if ((fin = fopen("/dev/urandom", "r")) == NULL) {
                 fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
@@ -148,71 +133,31 @@ void process_connection (int client_socket)
         }
         int len = 16; // this is half the value, actual hex will be double
         char buffer[len];
-        //char hexbuf[len*2+1];
-        /*
-        std::ifstream rfin("/dev/urandom");
-        rfin.read(buffer, len);
-		rfin.close(); 
-        cout<<"buffer: " <<buffer<<endl;
-
-        string R (buffer);
-        cout<<"hex straight up: " << cgipp::hex_encoded(buffer) <<endl;
-        cout<<"hex encoded: " << cgipp::hex_encoded(R) <<endl;
-        cout<<"hex decoded: " << cgipp::hex_decoded(cgipp::hex_encoded(R)) <<endl;
-        */
-        
 		string R;
         if(fread(buffer, 1, sizeof(buffer), fin) == sizeof(buffer)){
-        	//cout<< "R: " <<buffer << endl;
         	R = string(buffer,len);
-        	//cout<< "short R: " <<R << endl;
-        	/*
-        	hexbuf[len*2+1] = 0;
-        	for (int i = 0; i < sizeof(buffer); i++)
-			{
-				sprintf(&hexbuf[2 * i], "%02x", buffer[i]);
-			}
-			*/
-			
         }
         fclose(fin);
         string hexR = cgipp::hex_encoded(R);
-    	//cout<< "hex R: " <<hexR << endl;
-        
-        //R = cgipp::sha256(hexbuf);
-        //cout<<"hex R: " <<hexbuf<<endl;
-        //cout<<"SHA256 R: " <<R <<endl;
-        
         
         if ((fin = fopen("/dev/urandom", "r")) == NULL) {
                 fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
                 return;
         }
         char bufferP[pLength];
-        //char hexbufP[pLength*2+1];
         string P;
         if(fread(bufferP, 1, sizeof(bufferP), fin) == sizeof(bufferP)){
         	P = string(bufferP,pLength);
-        	/*
-        	hexbufP[pLength*2+1] = 0;
-        	for (int i = 0; i < sizeof(bufferP); i++)
-			{
-				sprintf(&hexbufP[2 * i], "%02x", bufferP[i]);
-			}
-			*/
         }
         fclose(fin);
         string hexP = cgipp::hex_encoded(P);
-        //cout<<"P: " <<P <<endl;
-        //cout<<"hex P: " <<hexP <<endl;
-		
 		const string &sendvalue = hexR + " " + hexP + "\n";
 		cout <<"send " <<sendvalue <<endl;
 
 		struct timeval t;
 		struct timeval t_new;
-		struct timeval tv;
-		tv.tv_sec = (int)(pow(16,pLength-1))+1; 
+		struct timeval tv; //used for timeout only
+		tv.tv_sec = (int)(pow(16,pLength-1)/4)+1; 
 		tv.tv_usec = 0;
 		gettimeofday(&t, NULL);
 		send (client_socket, sendvalue.c_str(), sendvalue.length(), MSG_NOSIGNAL);
@@ -221,10 +166,13 @@ void process_connection (int client_socket)
 			cout <<"waiting up to "<< tv.tv_sec <<" seconds." <<endl;
 			const string response = read_packet (client_socket);
 			gettimeofday(&t_new, NULL);
+			
+			// milliseconds = seconds*1000 + microseconds/1000
 			double difference = (t_new.tv_sec*1000+(double)(t_new.tv_usec/1000))
 				- (t.tv_sec*1000+(double)(t.tv_usec/1000));
 			cout<<"received "<<response <<"time: " << difference/1000 << " seconds"<<endl;
-			if(difference < tv.tv_sec*3){
+			// don't allow responses that came too quickly
+			if(difference < pow(tv.tv_sec,2)*2){
 				cout<<"time too short"<<endl;
 				send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
 				break;
@@ -235,6 +183,7 @@ void process_connection (int client_socket)
 			&& response.substr(0,32) == hexR && response.substr(64,32) == hexR){
 				cout<<"challenge accepted"<<endl;
 				send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
+				break;
 			}else
             {
             	cout<<"response denied"<<endl;
@@ -242,22 +191,6 @@ void process_connection (int client_socket)
                 break;
             }
 		}
-		
-		
-		/*
-        while (true)
-        {
-            const string & password = read_packet (client_socket);
-            if (password == db_password)
-            {
-                send (client_socket, "ok\n", 4, MSG_NOSIGNAL);
-            }
-            else
-            {
-                send (client_socket, "failed\n", 8, MSG_NOSIGNAL);
-            }
-        }
-        */
 
         close (client_socket);
     }

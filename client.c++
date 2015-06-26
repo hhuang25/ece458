@@ -49,7 +49,6 @@ class socket_error {};
 
 int main(int argc, char *argv[])
 {
-	//cout<<"begin client"<<endl;
     int socket = socket_to_server ("127.0.0.1", 12592);
         // The function expects an IP address, and not a 
         // hostname such as "localhost" or ecelinux1, etc.
@@ -60,12 +59,8 @@ int main(int argc, char *argv[])
 	int len = 16; // this is string length before hex conversion
     if (socket != -1)
     {
-        //send (socket, "user1\n", 7, MSG_NOSIGNAL);
-        //usleep (10000);
-        //send (socket, "password1\n", 11, MSG_NOSIGNAL);
-		
 		const string &hexRP = read_packet(socket);
-		//cout <<"received " +  hexRP << endl;
+		cout <<"received " +  hexRP << endl;
 		
 		int spaceLocation = hexRP.find(' ', 0);
 		//cout<<hexRP.length() << " " << spaceLocation<<endl;
@@ -73,46 +68,21 @@ int main(int argc, char *argv[])
 		//cout <<"R is " +  R << endl;
 		const string &P = cgipp::hex_decoded(hexRP.substr(spaceLocation+1, hexRP.length() - spaceLocation-2));
         
-        //cout <<"P is " +  P << endl;
-        //int pLength = hexRP.length() - len - 1;
-        
-        //FILE *fin;
         int iterations = 0;
-        //char buffer[len];
-        //char hexbuf[len*2+1];
-        //string X;
+        srand(time(NULL));
         uint64_t rannum = rand();
         while(true){
-        	/*
-			if ((fin = fopen("/dev/urandom", "r")) == NULL) {
-		            fprintf(stderr, "%s: unable to open file\n", "/dev/urandom");
-		            break;
-		    }
-		    
-		    if(fread(buffer, 1, sizeof(buffer), fin) == sizeof(buffer)){
-		    	X = string(buffer,len);
-		    	
-		    	//hexbuf[len*2+1] = 0;
-		    	//for (int i = 0; i < sizeof(buffer); i++)
-				//{
-				//	sprintf(&hexbuf[2 * i], "%02x", buffer[i]);
-				//}
-				
-		    }
-		    fclose(fin);
-		    */
-		    //cout<<"x is " <<X<<endl;
 		    char rawX[16];
 		    sprintf(rawX,"%016lx",rannum);
 		    //cout<<"rawX: " <<rawX<<endl;
 		    rannum++;
 		    const string &X(rawX);
+		    // total = R|X|R
 		    string total = R;
 		    total.append(X);
 		    total.append(R);
 		    const string hash = cgipp::sha256(total);
 		    ++iterations;
-		    //cout<<hash.substr(0,pLength)<<" vs " <<P<<endl;
 		    if(cgipp::hex_decoded(hash).substr(0,P.length()) == P){
 		    	total = cgipp::hex_encoded(total);
 		    	total.append("\n");
@@ -123,11 +93,11 @@ int main(int argc, char *argv[])
 		    
         }
         usleep (10000);
-        cout<<"did i get it?" <<endl;
+        cout<<"accepted?" <<endl;
         if(read_packet(socket) == "ok\n"){
-        	cout<<"yay"<<endl;
+        	cout<<"yes :)"<<endl;
         }else{
-        	cout<<"oops"<<endl;
+        	cout<<"no :("<<endl;
         }
         close(socket);
         cout<<"exit" <<endl;
