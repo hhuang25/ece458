@@ -51,23 +51,25 @@ int main(int argc, char *argv[])
 	int letters = 0;
 	if((finished = password_ok (possiblePwd)) == true) cout<<"password correct: " <<possiblePwd <<endl;
 	//static const char alphabet[] = "ghijnoptuvwabcxyzdefqrsklm";
-	static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
+	//static const char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
+	string alphabet = "abcdefghijklmnopqrstuvwxyz";
 	while(!finished){
 		uint64_t timevalues [26] = {};
 		uint64_t squarevalues [26] = {};
 		int times_picked [26] = {};
 		//destroy possible caching
 		for(int i = 0; i < 100000; i++){
-			int chosen_char = rand()%(sizeof(alphabet)-1);
-			const char &current = alphabet[chosen_char];
+			int chosen_char = rand()%26;
+			const char &current = alphabet.at(chosen_char);
 			const string &pwd_attempt = possiblePwd + current;
             password_ok (pwd_attempt);
             
 		}
 		srand(time(NULL));
-		for(int i = 0; i < 10000000; i++){
-            int chosen_char = rand()%(sizeof(alphabet)-1);
-			char current = alphabet[chosen_char];
+		for(int i = 0; i < 1000000; i++){
+            int chosen_char = rand()%26;
+            random_shuffle(alphabet.begin(),alphabet.end());
+			char current = alphabet.at(chosen_char);
 			
 			const string &pwd_attempt = possiblePwd + current;
 			uint64_t start = rdtsc();
@@ -79,9 +81,9 @@ int main(int argc, char *argv[])
 			}
 			uint64_t difference = end - start;
 			//cout<< alphabet[chosen_char]<< ": time of " <<difference <<endl; 
-			timevalues[chosen_char] += difference;
-			squarevalues[chosen_char] += (difference*difference);
-			times_picked[chosen_char] = times_picked[chosen_char] + 1;
+			timevalues[((char)alphabet.at(chosen_char))-97] += difference;
+			squarevalues[((char)alphabet.at(chosen_char))-97] += (difference*difference);
+			times_picked[((char)alphabet.at(chosen_char))-97] = times_picked[((char)alphabet.at(chosen_char))-97] + 1;
 			
 		}
 		//initialize to "a"
@@ -90,6 +92,7 @@ int main(int argc, char *argv[])
 		char highest_char = 'a';
 		double nexthighest_mean = 0.0;
 		int highest_picktime = 0;
+		alphabet = "abcdefghijklmnopqrstuvwxyz";
 		for(int i = 0; i < 26; i++){
 			double current_mean = (double)timevalues[i] / times_picked[i];
 			double current_var = ((double)1/ (double)(times_picked[i] - 1)) * (double)(squarevalues[i] - times_picked[i] * (current_mean * current_mean));
